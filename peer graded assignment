@@ -1,0 +1,143 @@
+import pandas as pd
+import scipy.stats
+import statsmodel.api as sm
+%matplotlib inline
+import matplotlib.pyplot as plt
+from scipy.stats import ttest_ind
+from scipy.stats import f_oneway
+from scipy.stats import pearsonr
+from sklearn.linear_model import LinearRegression
+
+// importing dataset
+boston_url = 'https://cf-courses-data.s3.us.cloud-object-storage.appdomain.cloud/IBMDeveloperSkillsNetwork-ST0151EN-SkillsNetwork/labs/boston_housing.csv'
+boston_df=pd.read_csv(boston_url)
+boston_df.head()
+
+//For the "Median value of owner-occupied homes" provide a boxplt-
+plt.boxplot(boston_df['MEDV'],)
+plt.title('Distribution of Median Home Values for Owner-Occupied Homes')
+plt.ylabel('Median Home Value (in Thousands of Dollars)')
+plt.show()
+print("In the boxplot analysis of MEDV, it appears that there are some outliers with values exceeding 40. These data points stand out as potential anomalies or extreme values in the distribution of median home values, and may warrant further investigation.")
+
+//Provide a bar plot for the Charles river vaab- le
+// Count the occurrences of each unique value in 'Chas'
+chas_counts = boston_df['CHAS'].value_counts()
+
+//Create a bar plot
+plt.bar(chas_counts.index, chas_counts.values, color=['blue', 'orange'])
+
+//Customize the bar plot (optional)
+plt.title('Bar Plot of Charles River Variable')
+plt.xlabel('Charles River (Chas)')
+plt.ylabel('Count')
+plt.xticks(chas_counts.index, labels=['Not Near River', 'Near River'])
+plt.show()
+chas_counts.index
+print("The barplot of the Charles River suggests that a significant proportion of the dataset corresponds to areas located away from the Charles River.")
+
+//Provide a boxplot for the MEDV variable vs the AGE variable. (Discretize the age variable into three groups of 35 years and younger, between 35 and 70 years and 70 years and ol- der)
+// Discretize the AGE variable into three groups
+bins = [0, 35, 70, float('inf')]
+labels = ['35 years and younger', 'Between 35 and 70 years', '70 years and older']
+boston_df['AGE_Group'] = pd.cut(boston_df['AGE'], bins=bins, labels=labels, right=False)
+
+// Create a boxplot
+plt.figure(figsize=(10, 6))
+plt.boxplot([boston_df[boston_df['AGE_Group'] == label]['MEDV'] for label in labels], labels=labels)
+
+// Customize the boxplot (optional)
+plt.title('Boxplot of MEDV vs AGE Groups')
+plt.xlabel('Age Groups')
+plt.ylabel('Median Home Value (in Thousands of Dollars)')
+plt.show()
+
+//Provide a scatter plot to show the relationship between Nitric oxide concentrations and the proportion of non-retail business acres per town. What can you say about the relatio- nship?
+plt.scatter(boston_df['INDUS'], boston_df['NOX'], color='blue', alpha=0.7)
+// Customize the scatter plot (optional)
+plt.title('Scatter Plot of NOX vs INDUS')
+plt.xlabel('Proportion of Non-Retail Business Acres (INDUS)')
+plt.ylabel('Nitric Oxide Concentrations (NOX)')
+
+// Show the plot
+plt.show()
+
+//Create a histogram for the pupil to teacher ratio variable
+
+plt.hist(boston_df['PTRATIO'], bins=10, color='skyblue', edgecolor='black')
+
+// Customize the histogram (optional)
+plt.title('Histogram of Pupil-Teacher Ratio (PTRATIO)')
+plt.xlabel('Pupil-Teacher Ratio')
+plt.ylabel('Frequency')
+
+// Show the plot
+plt.show()
+print("The mode appears to be around 20.2, being the value with the highest frequency (140 observations). This suggests that a pupil-teacher ratio of 20.2 is prevalent in the dataset. Several values have low frequencies, indicating that the 'PTRATIO' variable is not uniformly distributed, and certain values are more common than others.")
+
+
+//Task 3: Use the appropriate tests to answer the questions provided.
+//question1
+//To test whether there is a significant difference in the median value of houses bounded by the Charles River or not, we can use a t-test for independent samples.
+//Null Hypothesis(H0) : There is no significant difference in median values of houses bounded by the Charles River and those not bounded by the river 
+//Alternative Hypothesis (H1) : There is a significant difference in median values 
+chas_bounded = boston_df[boston_df['CHAS'] == 1]['MEDV']
+chas_not_bounded = boston_df[boston_df['CHAS'] == 0]['MEDV']
+
+# Perform t-test
+t_stat, p_value = ttest_ind(chas_bounded, chas_not_bounded)
+
+# Check the p-value
+print('p-value:', p_value)
+print("With a p-value of 7.39e-05, which is much smaller than a typical significance level of 0.05, we have strong evidence to reject the null hypothesis. This suggests that there is a significant difference in median values of houses between areas bounded and not bounded by the Charles River. The result implies that the Charles River variable is associated with a significant difference in the median values of houses.")
+
+//question2
+//Is there a difference in Median values of houses (MEDV) for each proportion of owner occupied units built prior to 1940 (AGE)? (ANOVA)
+//To test whether there is a difference in median values of houses (MEDV) for different proportions of owner-occupied units built prior to 1940 (AGE), we use an Analysis of Variance (ANOVA) test. ANOVA is suitable for comparing means across multiple groups.
+//Null Hypothesis(H0) : There is no significant difference in median values of houses across different proportions of owner-occupied units built prior to 1964 ).
+//Alternative Hypothesis (H1) : There is a significant difference in median values across groups.
+f_stat, p_value = f_oneway(boston_df[boston_df['AGE_Group'] == '35 years and younger']['MEDV'],
+                            boston_df[boston_df['AGE_Group'] == 'Between 35 and 70 years']['MEDV'],
+                            boston_df[boston_df['AGE_Group'] == '70 years and older']['MEDV'])
+
+# Check the p-value
+print('p-value:', p_value)
+print("The very small p-value suggests that we have sufficient evidence to reject the null hypothesis, indicating that there is a significant difference in median values of houses across the various proportions of owner-occupied units built before 1940. In other words, the variable 'AGE' appears to be associated with a significant difference in the median values of houses.")
+
+
+//question3
+//Can we conclude that there is no relationship between Nitric oxide concentrations and proportion of non-retail business acres per town? (Pearson Correlation)
+//To determine above, we can use the Pearson correlation coefficient,which measures the linear relationship between two continuous variables.
+correlation_coefficient, p_value = pearsonr(boston_df['NOX'], boston_df['INDUS'])
+
+# Check the correlation coefficient and p-value
+print('Pearson Correlation Coefficient:', correlation_coefficient)
+print('p-value:', p_value)
+print("With a Pearson Correlation Coefficient of 0.76 and an extremely small p-value of 7.91e-98, we have strong evidence against the null hypothesis that there is no relationship between Nitric oxide concentrations and the proportion of non-retail business acres per town.")
+
+//question4
+//What is the impact of an additional weighted distance to the five Boston employment centres on the median value of owner occupied homes? (Regression analysis)
+# Prepare the data for regression analysis
+X = boston_df[['DIS']]  # Independent variable
+y = boston_df['MEDV']     # Dependent variable
+
+# Create and fit a linear regression model
+model = LinearRegression()
+model.fit(X, y)
+
+# Obtain coefficients
+beta_0 = model.intercept_
+beta_1 = model.coef_[0]
+
+# Print coefficients
+print('Intercept (beta_0):', beta_0)
+print('Coefficient for DIS (beta_1):', beta_1)
+
+# Plot the regression line
+plt.scatter(X, y, color='blue', label='Actual Data')
+plt.plot(X, model.predict(X), color='red', linewidth=2, label='Regression Line')
+plt.title('Regression Analysis: DIS vs MEDV')
+plt.xlabel('DIS (Weighted Distances to Employment Centres)')
+plt.ylabel('MEDV (Median Value of Homes)')
+plt.legend()
+plt.show()
